@@ -53,23 +53,23 @@ d3.json("https://raw.githubusercontent.com/astrofyz/d3project_inherit/main/all_t
   const defs = svg.append('defs');
 
   var button = svg.append("text")
-                  .attr("x", 900)
-                  .attr("y", button_height/2)
-                  .style("fill", "#ffb14e")
+                  .attr("x", 0)
+                  .attr("y", button_height*4/9)
+                  .style("fill", "#3B40F9")
                   .style("font-size", "30px")
-                  .style("font-weight", "normal")
+                  .style("font-weight", "bold")
                   .text("long")
-                  .on("click", function(){highlight_function = highlight_node_links_long; console.log(highlight_function)})  
+                  .on("click", function(){let highlight_function = highlight_node_links_long; console.log(highlight_function); return highlight_function})  
                   
 
   var button = svg.append("text")
-                  .attr("x", 800)
-                  .attr("y", button_height/2)
-                  .style("color", "#9d02d7")
+                  .attr("x", 50)
+                  .attr("y", button_height*4/9)
+                  .style("fill", "#FB3D34")
                   .style("font-size", "30px")
-                  .style("font-weight", "normal")
+                  .style("font-weight", "bold")
                   .text("short")
-                  .on("click", function(){highlight_function = highlight_node_links_short; console.log(highlight_function)}) 
+                  .on("click", function(){let highlight_function = highlight_node_links_short; console.log(highlight_function); return highlight_function}) 
 
 
   // add in the links
@@ -186,7 +186,7 @@ d3.json("https://raw.githubusercontent.com/astrofyz/d3project_inherit/main/all_t
 
   
   function highlight_node_links_short(node,i){
-    console.log('short', node)
+    // console.log('short', node)
     var remainingNodes=[],
         nextNodes=[];
 
@@ -254,7 +254,7 @@ d3.json("https://raw.githubusercontent.com/astrofyz/d3project_inherit/main/all_t
   }
 
   function highlight_node_links_long(node,i){
-    console.log('long', node)
+    // console.log('long', node)
     var remainingNodes=[],
         nextNodes=[];
 
@@ -343,7 +343,7 @@ d3.json("https://raw.githubusercontent.com/astrofyz/d3project_inherit/main/all_t
                             .attr("clicked", stroke_style);}
                             // } 
                                           
-
+let highlight_function = highlight_node_links_short
     
 });
 
