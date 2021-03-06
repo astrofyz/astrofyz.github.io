@@ -128,13 +128,31 @@ input:checked + .slider:before {
      Можно наводить курсор на линк и тоже смотреть, что получается. 
    </p>
    <p>
-    Имеются многочисленные баги (числом, как минимум, два) — после выбора узла перестаёт работать его подсветка при наведении на линк и не работает
-    переключение между короткой и длинной версией. Как исправить ­— пока хз.
+    Имеются баги — после выбора узла перестаёт работать его подсветка при наведении на линк. Как исправить ­— пока хз.
   </p>
 <!--   <div>
     <button onClick="update();">Click to switch to long version</button>
   </div> -->
 </div> 
+
+<div id="nav">
+
+    <a href="#" id="short" name="short"> short </a>
+    <a href="#" id="long" name="long"> long </a>
+
+    <!-- <a href="#" id="video" name="video" onclick=choose(this.name)>Video Game Data Set</a>
+    <a href="#" id="movie" name="movie" onclick=choose(this.name)>Movies Data Set</a>
+    <a href="#" id="kick" name="kick" onclick=choose(this.name)>Kickstarter Data Set</a> -->
+
+    <!-- <a href="#" id="video" name="video">Video Game Data Set</a>
+    <a href="#" id="movie" name="movie">Movies Data Set</a>
+    <a href="#" id="kick" name="kick">Kickstarter Data Set</a> -->
+
+    <!-- <button id="video" name="video">Video Game Data Set</button>
+    <button id="movie" name="movie">Movies Data Set</button>
+    <button id="kick" name="kick">Kickstarter Data Set</button> -->
+
+  </div>
 
 <!-- <script>
 var isChecked=document.getElementById("togVersion").checked;
@@ -143,7 +161,7 @@ console.log(document.getElementById("togVersion"));
  -->
 <!-- Create a div where the graph will take place -->
 <div id="my_dataviz">
-  <script src="chart_short_highlights.js">
+  <script src="chart_highlights.js">
   // function update() {
   //   loadScript("chart_short_highlights.js")
   // }
