@@ -70,10 +70,11 @@ d3.json("https://raw.githubusercontent.com/astrofyz/d3project_inherit/main/all_t
   }
 
   var highlight_mode = "short";
-  document.getElementById("nav").addEventListener("click", choose);
+  document.getElementById("toggle").addEventListener("change", choose);
 
 function choose(event = null) {
-  event ? cName = event.target.name :  cName = "short" ;
+  // console.log(event)
+  event ? cName = (event.target.checked ? "long" : "short") :  cName = "short" ;
   data.current = cName;
 
 }
