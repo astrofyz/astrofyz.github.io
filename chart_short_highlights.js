@@ -25,13 +25,12 @@ const strokeWidth_Off = 2.
 const top_number = 66
 const max_char = 9
 const title_height = 100
-const button_height = 30
 var start_year = 2020
 const link_color = '#DDDEFF'
-var highlight_function 
+// var highlight_mode = "short"
 
-toursIDs = [6310, 5386, 4585, 4193, 3568, 3086, 2839, 2245, 2025, 1768, 631, 2363, 2249, 2320, 2142, 2141, 2339, 7019, 2349, 4979]
-toursYears = [2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010, 2009, 2008, 2007, 2006, 2005, 2004, 2003, 2002, 2001]
+toursIDs = [7053, 6310, 5386, 4585, 4193, 3568, 3086, 2839, 2245, 2025, 1768, 631, 2363, 2249, 2320, 2142, 2141, 2339, 7019, 2349, 4979]
+toursYears = [2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010, 2009, 2008, 2007, 2006, 2005, 2004, 2003, 2002, 2001]
 url_general = "https://rating.chgk.info/tournament/"
 
 // Set the sankey diagram properties
@@ -42,7 +41,7 @@ var sankey = d3.sankey()
     .maxDepth(top_number);
 
 // load the data
-d3.json("https://raw.githubusercontent.com/astrofyz/d3project_inherit/main/all_teams.json", function(error, graph) {
+d3.json("https://raw.githubusercontent.com/astrofyz/d3project_inherit/main/2021_all_teams.json", function(error, graph) {
 
   // Constructs a new Sankey generator with the default settings.
   sankey
@@ -52,27 +51,7 @@ d3.json("https://raw.githubusercontent.com/astrofyz/d3project_inherit/main/all_t
 
   const defs = svg.append('defs');
 
-  var button = svg.append("text")
-                  .attr("x", 0)
-                  .attr("y", button_height*4/9)
-                  .style("fill", "#3B40F9")
-                  .style("font-size", "30px")
-                  .style("font-weight", "bold")
-                  .text("long")
-                  .on("click", function(){let highlight_function = highlight_node_links_long; console.log(highlight_function); return highlight_function})  
-                  
-
-  var button = svg.append("text")
-                  .attr("x", 50)
-                  .attr("y", button_height*4/9)
-                  .style("fill", "#FB3D34")
-                  .style("font-size", "30px")
-                  .style("font-weight", "bold")
-                  .text("short")
-                  .on("click", function(){let highlight_function = highlight_node_links_short; console.log(highlight_function); return highlight_function}) 
-
-
-  // add in the links
+    // add in the links
   var link = svg.append("g")
     .attr("class", "link")
     .selectAll(".link")
@@ -107,7 +86,7 @@ d3.json("https://raw.githubusercontent.com/astrofyz/d3project_inherit/main/all_t
     .attr("class", "node")
     .attr("transform", function(d) { var dy = d.y + title_height; return "translate(" + d.x + "," + dy + ")"; })
     .attr("data-clicked", 0)
-    .on("click", highlight_node_links_short)
+    .on("click", function(d, i){highlight_node_links(d, i, this)})
 
 
   // add the circles for the nodes
@@ -136,7 +115,7 @@ d3.json("https://raw.githubusercontent.com/astrofyz/d3project_inherit/main/all_t
   xspace.forEach(function(d, i){
     var label = svg.append("text")
                     .attr("x", d+half_width/2)
-                    .attr("y", title_height/2.+button_height)
+                    .attr("y", title_height/2.)
                     .style("font-size", "40px")
                     .style("font-weight", "normal")
                     .style("fill", "#010B3C")
@@ -171,7 +150,9 @@ d3.json("https://raw.githubusercontent.com/astrofyz/d3project_inherit/main/all_t
 
   link //d3.select(this).select("source").select("circle").style("fill", "black")
     .on("mouseover",function(link,i){
-      d3.selectAll("circle").filter(function(d, i) {return (d.node == link.target.node) | (d.node == link.source.node)}).attr("opacity", 1.);
+      // console.log(link.target.node, link.source.node)
+      d3.selectAll("circle").filter(function(d, i) {return (d.node == link.target.node)}).attr("opacity", 1.);
+      d3.selectAll("circle").filter(function(d, i) {return (d.node == link.source.node)}).attr("opacity", 1.);
       return d3.select(this).style("stroke-opacity", strokeOpacity_On)
                             .style("stroke-width", function (d) { return d3.select(this).attr("clicked") == 1 ? Math.sqrt(d.value)*3.5 : strokeWidth_Off*4.; })
                             .filter(d3.select(this).attr("clicked") != 1)
@@ -185,8 +166,10 @@ d3.json("https://raw.githubusercontent.com/astrofyz/d3project_inherit/main/all_t
                             .style("stroke", function (d) { if (d3.select(this).attr("clicked") != 1) return link_color})})
 
   
-  function highlight_node_links_short(node,i){
-    // console.log('short', node)
+  var selected_links = {}
+
+  function highlight_node_links(node, i, thisnode){
+    // console.log(node.node) // return number of node
     var remainingNodes=[],
         nextNodes=[];
 
@@ -194,22 +177,22 @@ d3.json("https://raw.githubusercontent.com/astrofyz/d3project_inherit/main/all_t
 
     set_original = new Set(node.team.split("\n"));
 
-    if( d3.select(this).attr("data-clicked") == "1" ){
-      d3.select(this).attr("data-clicked","0");
-      d3.select(this).select("circle").attr("r", function (d) { return Math.sqrt(d.dy)*2.; })
+    if( d3.select(thisnode).attr("data-clicked") == "1" ){
+      d3.select(thisnode).attr("data-clicked","0");
+      d3.select(thisnode).select("circle").attr("r", function (d) { return Math.sqrt(d.dy)*2.; })
                                       .style("opacity", strokeOpacity_Off)
                                       // .style("stroke", function(d) { return d3.rgb(d.color).darker(2); })     
       stroke_opacity = strokeOpacity_Off;
       width_coef = 3.5;
-      stroke_style = d3.select(this).attr("data-clicked");
+      stroke_style = d3.select(thisnode).attr("data-clicked");
     }else{      
-      d3.select(this).attr("data-clicked","1");
-      d3.select(this).select("circle").attr("r", function (d) { return Math.sqrt(d.dy)*2.5; })
+      d3.select(thisnode).attr("data-clicked","1");
+      d3.select(thisnode).select("circle").attr("r", function (d) { return Math.sqrt(d.dy)*2.5; })
                                       .style("opacity", strokeOpacity_On)
                                       .style("stroke", function(d) { return d3.rgb(d.color).brighter(5); })      
       stroke_opacity = strokeOpacity_On;
       width_coef = 3.5;
-      stroke_style = d3.select(this).attr("data-clicked");
+      stroke_style = d3.select(thisnode).attr("data-clicked");
     }
 
     var traverse = [{
@@ -222,16 +205,32 @@ d3.json("https://raw.githubusercontent.com/astrofyz/d3project_inherit/main/all_t
 
     traverse.forEach(function(step){
       node[step.linkType].forEach(function(link) {
-        // console.log(link, node[step.linkType]);
-          if (link[step.nodeType].value > 0.5) {
-
+        // console.log(link, node);
+        if (link[step.nodeType].value > 0.5) {
           set_cur = new Set(link[step.nodeType].team.split("\n"));
           intersect = new Set([...set_original].filter(x => set_cur.has(x)))  
           if (intersect.size > 0) {
+            // selected_links[link.id] ? 0 : selected_links[link.id] = 0 // dictionary?
+            // console.log(link.id)
 
-            remainingNodes.push(link[step.nodeType]);}
-            highlight_link(link.id, stroke_opacity, width_coef, stroke_style);
-      }});
+            if (d3.select(thisnode).attr("data-clicked") == 1) {
+            // if (selected_links[link.id] == 0) {
+            // console.log('here')
+              remainingNodes.push(link[step.nodeType]);
+              highlight_link(link.id, stroke_opacity, width_coef, stroke_style);
+            }
+               // selected_links[link.id] += 1;}
+
+            else if (d3.select(thisnode).attr("data-clicked") == 0){
+              // if (selected_links[link.id] == 1) {
+              // console.log('there')
+              remainingNodes.push(link[step.nodeType]);
+              highlight_link(link.id, stroke_opacity, width_coef, stroke_style);
+            }
+              // selected_links[link.id] -= 1;
+          }
+        }
+        });
 
       while (remainingNodes.length) {
         nextNodes = [];
@@ -242,73 +241,35 @@ d3.json("https://raw.githubusercontent.com/astrofyz/d3project_inherit/main/all_t
               set_cur = new Set(link[step.nodeType].team.split("\n"));
               intersect = new Set([...set_original].filter(x => set_cur.has(x)))
               if (intersect.size > 0) {
+                // selected_links[link.id] ? 0 : selected_links[link.id] = 0 // dictionary?  # delete zero links and what is undefined????
 
-                nextNodes.push(link[step.nodeType]);
-                highlight_link(link.id, stroke_opacity, width_coef, stroke_style);
-              }
-          }});
-        });
-        remainingNodes = nextNodes;
-      }
-    });
-  }
+                if (d3.select(thisnode).attr("data-clicked") == 1) {
+                  // if (selected_links[link.id] == 0) {
+                  // console.log('next here')
+                  nextNodes.push(link[step.nodeType]);
+                  highlight_link(link.id, stroke_opacity, width_coef, stroke_style);
+                }
+               // selected_links[link.id] += 1;}
 
-  function highlight_node_links_long(node,i){
-    // console.log('long', node)
-    var remainingNodes=[],
-        nextNodes=[];
-
-    // var stroke_opacity = 0;  
-
-    set_original = new Set(node.team.split("\n"));
-
-    if( d3.select(this).attr("data-clicked") == "1" ){
-      d3.select(this).attr("data-clicked","0");
-      d3.select(this).select("circle").attr("r", function (d) { return Math.sqrt(d.dy)*2.; })
-                                      .style("opacity", strokeOpacity_Off)
-                                      // .style("stroke", function(d) { return d3.rgb(d.color).darker(2); })     
-      stroke_opacity = strokeOpacity_Off;
-      width_coef = 3.5;
-      stroke_style = d3.select(this).attr("data-clicked");
-    }else{      
-      d3.select(this).attr("data-clicked","1");
-      d3.select(this).select("circle").attr("r", function (d) { return Math.sqrt(d.dy)*2.5; })
-                                      .style("opacity", strokeOpacity_On)
-                                      .style("stroke", function(d) { return d3.rgb(d.color).brighter(5); })      
-      stroke_opacity = strokeOpacity_On;
-      width_coef = 3.5;
-      stroke_style = d3.select(this).attr("data-clicked");
-    }
-
-    var traverse = [{
-                      linkType : "sourceLinks",
-                      nodeType : "target"
-                    },{
-                      linkType : "targetLinks",
-                      nodeType : "source"
-                    }];
-
-    traverse.forEach(function(step){
-      node[step.linkType].forEach(function(link) {
-          if (link.value > 0.5) {
-            remainingNodes.push(link[step.nodeType]);}
-            highlight_link(link.id, stroke_opacity, width_coef, stroke_style);
-      });
-
-      while (remainingNodes.length) {
-        nextNodes = [];
-        remainingNodes.forEach(function(node) {
-          node[step.linkType].forEach(function(link) {
-            if (link.value > 0.5) {
-                nextNodes.push(link[step.nodeType]);
-                highlight_link(link.id, stroke_opacity, width_coef, stroke_style);
-          }
+                else if (d3.select(thisnode).attr("data-clicked") == 0){
+                  // if (selected_links[link.id] == 1) {
+                  // console.log('next there')
+                  nextNodes.push(link[step.nodeType]);
+                  highlight_link(link.id, stroke_opacity, width_coef, stroke_style);
+                }
+              // selected_links[link.id] -= 1;
+            }
+                // nextNodes.push(link[step.nodeType]);
+                // highlight_link(link.id, stroke_opacity, width_coef, stroke_style);
+            }
           });
-        });
+        }); 
         remainingNodes = nextNodes;
+        // console.log(selected_links)
       }
     });
-    }
+
+  }
 
   function highlight_link(id, opacity, width_coef, stroke_style){
       d3.select("#link-"+id)
@@ -343,7 +304,5 @@ d3.json("https://raw.githubusercontent.com/astrofyz/d3project_inherit/main/all_t
                             .attr("clicked", stroke_style);}
                             // } 
                                           
-let highlight_function = highlight_node_links_short
-    
 });
 
