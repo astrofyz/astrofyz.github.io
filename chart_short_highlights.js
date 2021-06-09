@@ -49,7 +49,6 @@ d3.json("https://raw.githubusercontent.com/astrofyz/d3project_inherit/main/2021_
       .links(graph.links)
       .layout(1);
 
-  const defs = svg.append('defs');
 
     // add in the links
   var link = svg.append("g")
@@ -86,6 +85,7 @@ d3.json("https://raw.githubusercontent.com/astrofyz/d3project_inherit/main/2021_
     .attr("class", "node")
     .attr("transform", function(d) { var dy = d.y + title_height; return "translate(" + d.x + "," + dy + ")"; })
     .attr("data-clicked", 0)
+    // .on("click", function(d, i){bfs(d, i, this)})
     .on("click", function(d, i){highlight_node_links(d, i, this)})
 
 
@@ -269,40 +269,80 @@ d3.json("https://raw.githubusercontent.com/astrofyz/d3project_inherit/main/2021_
       }
     });
 
-  }
+  }                                 
 
-  function highlight_link(id, opacity, width_coef, stroke_style){
-      d3.select("#link-"+id)
-                            .style("stroke-width", function (d) { if (stroke_style == 0) {return strokeWidth_Off} else {return Math.sqrt(d.value)*width_coef}})
-                            .style('stroke', function(d) { if (stroke_style == 0) {return link_color;} else {
-                                // make unique gradient ids  
-                                const gradientID = `gradient${id}`;
-
-                                const startColor = d.source.color;
-                                const stopColor = d.target.color;
-
-                                const linearGradient = defs.append('linearGradient')
-                                                           .attr('id', gradientID);
-
-                                linearGradient.selectAll('stop') 
-                                              .data([                             
-                                                      {offset: '10%', color: startColor },      
-                                                      {offset: '90%', color: stopColor }    
-                                                    ])                  
-                                              .enter().append('stop')
-                                              .attr('offset', d => {
-                                              return d.offset; 
-                                                                    })   
-                                              .attr('stop-color', d => {
-                                                return d.color;
-                                                   })
-                                              .attr('stop-opacity', 0.65);
-
-                                              return `url(#${gradientID})`;
-                                                  }} )
-                            .style("stroke-opacity", opacity)
-                            .attr("clicked", stroke_style);}
-                            // } 
-                                          
 });
 
+const defs = svg.append('defs');
+
+
+
+function searchPerson() {
+  var txtName = document.getElementById("txtName");
+
+  d3.selectAll(".node").filter(function(d) {
+    d["sourceLinks"].forEach(function(link) {
+      if (typeof link.team !== "undefined") {
+        if (link.team.includes(txtName.value)) {
+          // console.log(link.id)
+          highlight_link(link.id, 1., 3.5, 1)
+        }
+      }
+    })
+    return d.team.includes(txtName.value);
+    }).select("circle").style("opacity", "1")
+                       .attr("r", function (d) { return Math.sqrt(d.dy)*2.5; })
+
+      // console.log(d3.selectAll(".link"))
+  }      
+
+
+function highlight_link(id, opacity, width_coef, stroke_style){
+  d3.select("#link-"+id)
+    .style("stroke-width", function (d) { if (stroke_style == 0) {return strokeWidth_Off} else {return Math.sqrt(d.value)*width_coef}})
+    .style('stroke', function(d) { 
+      if (stroke_style == 0) {
+        return link_color;
+      } 
+      else {
+        // make unique gradient ids  
+        const gradientID = `gradient${id}`;
+        const startColor = d.source.color;
+        const stopColor = d.target.color;
+        const linearGradient = defs.append('linearGradient')
+                                   .attr('id', gradientID);
+
+        linearGradient.selectAll('stop') 
+                      .data([                             
+                        {offset: '10%', color: startColor },      
+                        {offset: '90%', color: stopColor }    
+                      ])                  
+                      .enter().append('stop')
+                      .attr('offset', d => {
+                        return d.offset; 
+                      })
+                      .attr('stop-color', d => {
+                        return d.color;
+                      })
+                      .attr('stop-opacity', 0.65);
+        return `url(#${gradientID})`;
+        }
+    })
+    .style("stroke-opacity", opacity)
+    .attr("clicked", stroke_style);
+  }
+
+function reset(){
+  d3.selectAll(".node").select("circle").attr("r", function (d) { return Math.sqrt(d.dy)*2.; })
+                                        .style("opacity", strokeOpacity_Off)
+
+  d3.selectAll("path").each(function(d) {
+    if (d.value > 0.5) {
+      d3.select(".link").select("path#link-"+d.id).style("stroke", link_color)
+                                                  .style("stroke-opacity", strokeOpacity_Off)
+                                                  .style("stroke-width", strokeWidth_Off)
+
+    }
+  })
+
+}

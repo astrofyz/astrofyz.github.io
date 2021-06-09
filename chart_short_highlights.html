@@ -1,0 +1,93 @@
+<!-- Code from d3-graph-gallery.com -->
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<!-- Load d3.js -->
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<!-- Load cytoscape.js -->
+<script src='cytoscape.min.js'></script>
+
+
+<!-- Load the sankey.js function -->
+<!-- <script src="https://cdn.jsdelivr.net/gh/holtzy/D3-graph-gallery@master/LIB/sankey.js"></script> -->
+<script src="sankey_uniform.js"></script>
+
+  <!-- Open Sans & CSS -->
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Amatic+SC&display=swap" rel="stylesheet">
+  <!-- <link href="https://fonts.googleapis.com/css?family=Open+Sans:700,400,300" rel='stylesheet' type='text/css'> -->
+    <style>
+    body {
+      font-family: 'Amatic SC', cursive;
+      font-size: 18px;
+      font-weight: 400;
+      color: #525252;
+      text-align: center;
+    } 
+
+    text {
+      cursor: pointer;
+      font-size: 25px;
+    }
+
+    .title{
+      font-size: 60px;
+    }
+
+/*    .link {  почему если это не убрать, то вылазят вспомогательные линки?
+      fill: none;
+      stroke: #000;
+      stroke-opacity: .2;
+    }*/
+
+      .link:hover {   
+        cursor: pointer;
+      }
+
+    .node circle {
+        cursor: pointer;
+        fill-opacity: .9;
+        shape-rendering: crispEdges;
+    }
+
+    .node text {
+      pointer-events: none;
+      text-shadow: 0 1px 0 #fff;
+    }
+
+
+    </style>
+
+
+<div id="intro" style="width: 1800px;">
+  <h1>
+    20 лет студчров
+  </h1>
+  <p>
+    Можно кликать на команды и смотреть, что получается.
+    </p>
+    <p>
+     Можно наводить курсор на линк и тоже смотреть, что получается. 
+   </p>
+   <p>
+    Как исправить то, что после выбора узла перестаёт работать его подсветка при наведении на линк, я пока хз.
+  </p>
+
+  <textarea id="txtName" name="txt-Name" placeholder="Кого ищем?.."></textarea>
+  <button onclick="searchPerson()">Искать</button>
+  <button onclick="reset()">Сброс</button>
+</div> 
+
+
+
+<!-- Create a div where the graph will take place -->
+<div id="my_dataviz">
+  <script src="chart_short_highlights.js">
+</script>
+</div>
+
+<div id="ending">
+  <p>
+    @astrofyz
+  </p>
+</div> 
