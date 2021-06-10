@@ -55,6 +55,61 @@
       text-shadow: 0 1px 0 #fff;
     }
 
+    textarea#txtName {
+      font-size: 18px;
+      width: 250px;
+      height: 30px;
+      border: 2px solid #DDDEFF;
+      border-radius: 15px;
+      padding: 5px;
+      font-family: 'Amatic SC', cursive;
+      font-weight: 500;
+    }
+
+    @mixin button-reset {
+      padding: 0;
+      border: none;
+      font: inherit;
+      color: inherit;
+      background-color: transparent;
+      cursor: pointer;
+      text-align: none;
+    }
+
+    .btn {
+      /* default for <button>, but useful for <a> */
+      display: inline-block;
+      text-align: center;
+      vertical-align: middle;
+      /*text-decoration: none;*/
+
+      font-size: 15px;
+      font-family: 'Open Sans', bold;
+      font-weight: 500;
+
+      /* create a small space when buttons wrap on 2 lines */
+      margin: 0px 2px;
+
+      width: 75px;
+      height: 30px;
+
+      /* invisible border (will be colored on hover/focus) */
+      border: solid 1px transparent;
+      border-radius: 4px;
+
+      /* size comes from text & padding (no width/height) */
+      padding: 1px 3px;
+
+      /* make sure colors have enough contrast! */
+      color: #ffffff;
+      background-color: #6802d7;
+    }
+
+    .btn:hover {
+      color: #9555af;
+      border-color: currentColor;
+      background-color: white;
+    }
 
     </style>
 
@@ -64,18 +119,20 @@
     20 лет студчров
   </h1>
   <p>
-    Можно кликать на команды и смотреть, что получается.
+    Можно кликать на команды или наводить курсор на линк и смотреть, что получается.
     </p>
     <p>
-     Можно наводить курсор на линк и тоже смотреть, что получается. 
+     Можно искать людей! Лучше по фамилиям, но иногда и это не спасает
    </p>
- <!--   <p>
-    Как исправить то, что после выбора узла перестаёт работать его подсветка при наведении на линк, я пока хз.
-  </p> -->
+   <p>
+    Иногда всё ломается
+  </p>
 
   <textarea id="txtName" name="txt-Name" placeholder="Кого ищем?.."></textarea>
-  <button onclick="searchPerson()">Искать</button>
-  <button onclick="reset()">Сброс</button>
+  <p>
+    <button class="btn" onclick="searchPerson()">Искать</button>
+    <button class="btn" onclick="reset()">Сброс</button>
+  </p>
 </div> 
 
 
