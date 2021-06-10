@@ -141,29 +141,37 @@ d3.json("https://raw.githubusercontent.com/astrofyz/d3project_inherit/main/2021_
 
   node
     .on("mouseover", function(d) { if ((d3.select(this).attr("data-clicked") == 0) | (d3.select(this).attr("data-clicked") == null))
-                                        return d3.select(this).select("circle").attr("r", function (d) { return Math.sqrt(d.dy)*2.5; }) })
-                                                                               // .style("opacity", function (d) { return strokeOpacity_On; }) } )
-    .on("mouseout", function() { if ((d3.select(this).attr("data-clicked") == 0) | (d3.select(this).attr("data-clicked") == null)) 
-                                      return d3.select(this).select("circle").attr("r", function (d) { return Math.sqrt(d.dy)*2.; }) })
-                                                                             // .style("opacity", strokeOpacity_Off) } )
+                                        return d3.select(this).select("circle").attr("r", function (d) { return Math.sqrt(d.dy)*2.5; }) //})
+                                                                               .style("opacity", function (d) { return strokeOpacity_On; }) } )
+    .on("mouseout", function(d) { if ((d3.select(this).attr("data-clicked") == 0) | (d3.select(this).attr("data-clicked") == null)) 
+                                      return d3.select(this).select("circle").attr("r", function (d) { return Math.sqrt(d.dy)*2.; }) //})
+                                                                             .style("opacity", strokeOpacity_Off) })
 
 
   link //d3.select(this).select("source").select("circle").style("fill", "black")
     .on("mouseover",function(link,i){
       // console.log(link.target.node, link.source.node)
-      d3.selectAll("circle").filter(function(d, i) {return (d.node == link.target.node)}).style("opacity", 1.);
-      d3.selectAll("circle").filter(function(d, i) {return (d.node == link.source.node)}).style("opacity", 1.);
+      d3.selectAll("circle").filter(function(d, i) {return ((d.node == link.target.node) | (d.node == link.source.node))}).style("opacity", 1.);
+      // d3.selectAll("circle").filter(function(d, i) {return (d.node == link.source.node)}).style("opacity", 1.);
       return d3.select(this).style("stroke-opacity", strokeOpacity_On)
                             .style("stroke-width", function (d) { return d3.select(this).attr("clicked") == 1 ? Math.sqrt(d.value)*3.5 : strokeWidth_Off*4.; })
                             .filter(d3.select(this).attr("clicked") != 1)
                             .style("stroke", "#D8D9FD")})
                                                         
     .on("mouseout",function(link,i){
-      d3.selectAll("circle").filter(function(d, i) {return (d.node == link.target.node) | (d.node == link.source.node)}).style("opacity", strokeOpacity_Off);
-      return d3.select(this).style("stroke-opacity", function (d) { if (d3.select(this).attr("clicked") != 1) return  strokeOpacity_Off; })
-                            .style("stroke-width", function (d) { return d3.select(this).attr("clicked") == 1 ? Math.sqrt(d.value)*3.5 : strokeWidth_Off; })
+      d3.selectAll(".node").filter(function (d) {
+        return ((d.node == link.target.node)|(d.node == link.source.node))&((d3.select(this).attr("data-clicked") == 0)|(d3.select(this).attr("data-clicked") == null))
+      }).selectAll("circle").style("opacity", strokeOpacity_Off);
+      return d3.select(this).style("stroke-opacity", function (d) { 
+                                                        if (d3.select(this).attr("clicked") != 1) return  strokeOpacity_Off; 
+                                                        })
+                            .style("stroke-width", function (d) {
+                                                        return d3.select(this).attr("clicked") == 1 ? Math.sqrt(d.value)*3.5 : strokeWidth_Off; 
+                                                        })
                             .filter(d3.select(this).attr("clicked") != 1)
-                            .style("stroke", function (d) { if (d3.select(this).attr("clicked") != 1) return link_color})})
+                            .style("stroke", function (d) { if (d3.select(this).attr("clicked") != 1) return link_color
+                                                          })
+    })
 
   
   var selected_links = {}
@@ -283,13 +291,13 @@ function searchPerson() {
   d3.selectAll(".node").filter(function(d) {
     d["sourceLinks"].forEach(function(link) {
       if (typeof link.team !== "undefined") {
-        if (link.team.includes(txtName.value)) {
+        if (link.team.toLowerCase().includes(txtName.value.toLowerCase())) {
           // console.log(link.id)
           highlight_link(link.id, 1., 3.5, 1)
         }
       }
     })
-    return d.team.includes(txtName.value);
+    return d.team.toLowerCase().includes(txtName.value.toLowerCase());
     }).select("circle").style("opacity", "1")
                        .attr("r", function (d) { return Math.sqrt(d.dy)*2.5; })
 
