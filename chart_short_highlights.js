@@ -141,25 +141,25 @@ d3.json("https://raw.githubusercontent.com/astrofyz/d3project_inherit/main/2021_
 
   node
     .on("mouseover", function(d) { if ((d3.select(this).attr("data-clicked") == 0) | (d3.select(this).attr("data-clicked") == null))
-                                        return d3.select(this).select("circle").attr("r", function (d) { return Math.sqrt(d.dy)*2.5; })
-                                                                               .attr("opacity", function (d) { return strokeOpacity_On; }) } )
+                                        return d3.select(this).select("circle").attr("r", function (d) { return Math.sqrt(d.dy)*2.5; }) })
+                                                                               // .style("opacity", function (d) { return strokeOpacity_On; }) } )
     .on("mouseout", function() { if ((d3.select(this).attr("data-clicked") == 0) | (d3.select(this).attr("data-clicked") == null)) 
-                                      return d3.select(this).select("circle").attr("r", function (d) { return Math.sqrt(d.dy)*2.; })
-                                                                             .attr("opacity", function (d) { return strokeOpacity_Off; }) } )
+                                      return d3.select(this).select("circle").attr("r", function (d) { return Math.sqrt(d.dy)*2.; }) })
+                                                                             // .style("opacity", strokeOpacity_Off) } )
 
 
   link //d3.select(this).select("source").select("circle").style("fill", "black")
     .on("mouseover",function(link,i){
       // console.log(link.target.node, link.source.node)
-      d3.selectAll("circle").filter(function(d, i) {return (d.node == link.target.node)}).attr("opacity", 1.);
-      d3.selectAll("circle").filter(function(d, i) {return (d.node == link.source.node)}).attr("opacity", 1.);
+      d3.selectAll("circle").filter(function(d, i) {return (d.node == link.target.node)}).style("opacity", 1.);
+      d3.selectAll("circle").filter(function(d, i) {return (d.node == link.source.node)}).style("opacity", 1.);
       return d3.select(this).style("stroke-opacity", strokeOpacity_On)
                             .style("stroke-width", function (d) { return d3.select(this).attr("clicked") == 1 ? Math.sqrt(d.value)*3.5 : strokeWidth_Off*4.; })
                             .filter(d3.select(this).attr("clicked") != 1)
                             .style("stroke", "#D8D9FD")})
                                                         
     .on("mouseout",function(link,i){
-      d3.selectAll("circle").filter(function(d, i) {return (d.node == link.target.node) | (d.node == link.source.node)}).attr("opacity", strokeOpacity_Off);
+      d3.selectAll("circle").filter(function(d, i) {return (d.node == link.target.node) | (d.node == link.source.node)}).style("opacity", strokeOpacity_Off);
       return d3.select(this).style("stroke-opacity", function (d) { if (d3.select(this).attr("clicked") != 1) return  strokeOpacity_Off; })
                             .style("stroke-width", function (d) { return d3.select(this).attr("clicked") == 1 ? Math.sqrt(d.value)*3.5 : strokeWidth_Off; })
                             .filter(d3.select(this).attr("clicked") != 1)
