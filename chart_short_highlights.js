@@ -298,8 +298,9 @@ function searchPerson() {
       }
     })
     return d.team.toLowerCase().includes(txtName.value.toLowerCase());
-    }).select("circle").style("opacity", "1")
-                       .attr("r", function (d) { return Math.sqrt(d.dy)*2.5; })
+    }).attr("data-clicked","1")
+      .select("circle").style("opacity", "1")
+      .attr("r", function (d) { return Math.sqrt(d.dy)*2.5; })
 
       // console.log(d3.selectAll(".link"))
   }      
