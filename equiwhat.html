@@ -1,0 +1,145 @@
+<script src='https://api.mapbox.com/mapbox-gl-js/v2.4.1/mapbox-gl.js'></script>
+<link href='https://api.mapbox.com/mapbox-gl-js/v2.4.1/mapbox-gl.css' rel='stylesheet' />
+
+<div id='map'></div>
+<div class='map-overlay' id='features'><h2>Equinoxes in european languages</h2><div id='pd'><p>Hover over a country!</p></div></div>
+<div class='map-overlay' id='legend'></div>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@200&display=swap" rel="stylesheet">
+  
+<style>
+body {
+  margin: 0;
+  padding: 0;
+}
+
+h2,
+h3 {
+  margin: 10px;
+  font-size: 18px;
+}
+
+h3 {
+  font-size: 20px;
+}
+
+p {
+  margin: 12px;
+}
+
+/**
+* Create a position for the map
+* on the page */
+#map {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+}
+
+/**
+* Set rules for how the map overlays
+* (information box and legend) will be displayed
+* on the page. */
+.map-overlay {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: #fff;
+  margin-right: 20px;
+  font-family: 'Nunito', sans-serif;
+  overflow: auto;
+  border-radius: 3px;
+}
+
+#features {
+  top: 0;
+  height: 150px;
+  margin-top: 20px;
+  width: 250px;
+}
+
+#legend {
+  padding: 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  line-height: 18px;
+  height: 80px;
+  margin-bottom: 40px;
+  width: 100px;
+}
+
+.legend-key {
+  display: inline-block;
+  border-radius: 20%;
+  width: 10px;
+  height: 10px;
+  margin-right: 5px;
+}
+</style>
+
+<script type="text/javascript">
+	mapboxgl.accessToken = 'pk.eyJ1IjoiYXN0cm9meXoiLCJhIjoiY2s1Yno1eXQ4MWdnNTNtbW0wdTB6bTV4cSJ9.JqggCkBwCUvnD7TxAtDnuQ';
+
+	const map = new mapboxgl.Map({
+    container: 'map', // container id
+    style: 'mapbox://styles/astrofyz/cktuhv9ar0qve17o7xta4hzb9' // replace this with your style URL
+	});
+
+	map.on('load', () => {
+		const layers = [
+			'-1',
+  			'0',
+  			'+1',
+  			];
+		const colors = [
+  			'#38618c',
+  			'#ff5964',
+  			'#ffe74c',
+  			];
+
+  		const keys_leg = [
+  			'night',
+  			'night & day',
+  			'day',
+  			];
+
+  		const legend = document.getElementById('legend');
+
+  		document.getElementById('legend').innerHTML = `<strong>Related to:</strong>`
+
+		layers.forEach((layer, i) => {
+  			const color = colors[i];
+  			const item = document.createElement('div');
+  			const key = document.createElement('span');
+  			key.className = 'legend-key';
+  			key.style.backgroundColor = color;
+
+  			const value = document.createElement('span');
+  			value.innerHTML = keys_leg[i];
+  			item.appendChild(key);
+  			item.appendChild(value);
+  			legend.appendChild(item);
+			});
+
+
+		map.on('mousemove', ({ point }) => {
+			const states = map.queryRenderedFeatures(point, {
+				layers: ['equiwhat-data']
+				});
+  		document.getElementById('pd').innerHTML = states.length
+    		? `<p><strong><em>${states[0].properties.index}</strong></em></p><h3>${states[0].properties.translation}</h3>`
+    		: `<p>Hover over a country!</p>`;
+		});
+
+		map.getCanvas().style.cursor = 'default';
+
+
+		map.fitBounds([
+			[24.817,20.525],
+  			[32.497,71.944]
+		]);
+
+});
+</script>
