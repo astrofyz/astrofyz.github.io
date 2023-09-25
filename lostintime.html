@@ -1,1 +1,479 @@
+<!DOCTYPE html>
+<html>
 
+<head>
+  <title>westcoastmap</title>
+
+  <!-- <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7/leaflet.css" /> -->
+  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
+
+  <!-- <script src="http://cdn.leafletjs.com/leaflet-0.7/leaflet.js"></script> -->
+  <script src='leaflet-omnivore.min.js'></script>
+  <script src="http://d3js.org/d3.v4.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3-delaunay@6"></script>
+
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Beth+Ellen&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Kalam&display=swap" rel="stylesheet">
+
+</head>
+
+<body>
+  <div id="map"></div>
+
+
+  <style>
+  #map { 
+    height: 100%
+  }
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+
+
+  div.tooltip {                   /* set the CSS for tooltip divs */
+    position: fixed;         /* reference for measurement */
+    text-align: center;         /* align the text to the center */
+/*    width: 60px;                    /* set the width of the rectangle */*/
+/*    height: 28px;                   /* set the height of the   rectangle */*/
+/*    padding: 2px;                   /* set a border around the rectangle */*/
+    font: 25px sans-serif;      /* set the font type for the tooltips */
+/*    background: lightsteelblue; /* set the colour of the rectangle */*/
+    border: 1px;                    /* turn off the border (0px) */
+    border-radius: 8px;         /* set how rounded the edges of the rectangle is */
+    pointer-events: none;           /* 'none' tells the mouse to ignore the rectangle */
+    z-index: 9999;
+    max-width: 100%;
+  }
+
+
+  div.tooltip.tooltiptext {
+    font: 25px sans-serif;
+  }
+
+
+  .popover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 9998;
+  display: none;
+  padding: 5px;
+}
+
+  </style>
+
+  
+  <script type="text/javascript">
+
+    var unitRadius = 10;     // The pixel radius of a point of size = 1
+
+    var mergePoints = function(a, b) {
+      var weight = b.r / (a.r + b.r);
+      return {
+        x: a.x + weight * (b.x - a.x),
+        y: a.y + weight * (b.y - a.y),
+        r: unitRadius * Math.sqrt(a.points.length + b.points.length),
+        points: a.points.concat(b.points)
+      };
+    };
+
+
+    var initClusterArray = function(points) {
+      var clusters = points.map(function(d, i) {
+        var p = map.latLngToLayerPoint([d.lat, d.lng]);
+          return {
+            x: p.x,
+            y: p.y,
+            r: unitRadius,
+            points: [d]
+          };
+        });
+
+      // Consolidate coincident vertices. The voronoi tesselation will not
+      // work if there are duplicate vertices.
+      return d3.nest()
+        .key(function(d) { return [d.x.toFixed(3), d.y.toFixed(3)].join(','); })
+        .rollup(function(leaves) { return leaves.reduce(mergePoints); })
+        .entries(clusters)
+        .map(function(d, i) { return d.value; });
+    };
+
+
+    var overlap = function(points) {
+        var clusters = initClusterArray(points).map(function(d, i) { d.index = i; return d; }),
+            maxRadius = d3.max(clusters, function(d) { return d.r; }),
+            hasClusters = true;
+
+        // Loop until we don't find any more clusters
+        while (hasClusters) {
+            hasClusters = false;
+
+            // Create an array of the edges of a Delaunay triangulation,
+            // sorted by distance (from smallest to largest).
+            //
+            // One of the properties of a Delaunay triangulation is that
+            // at least one of the edges connected to a node is its nearest
+            // neighbor.
+            var vertices = []
+            clusters.filter(function(v) { return !!v; }).forEach(d => vertices.push([d.x, d.y]))
+            vertices = vertices.flat(Infinity)
+            const delaunay = new d3.Delaunay(vertices)
+
+            links = []
+            
+            for (var i = 0; i < clusters.length; ++i) {
+              for (let nbr of delaunay.neighbors(i)) {
+                if (nbr > i) {
+                  if ((clusters[i] !== null)&(clusters[nbr] !== null)){
+                    obj = new Object()
+                    obj.source = clusters[i]
+                    obj.target = clusters[nbr]
+                    dx = obj.source.x - obj.target.x
+                    dy = obj.source.y - obj.target.y
+                    obj.distance = Math.sqrt(dx * dx + dy * dy)
+                    links.push(obj)
+                  }
+                }
+              }
+            }
+
+            links = links.sort(function(a, b) {
+                    return a.distance - b.distance;
+                });
+
+            // Iterate through the edges, from smallest to largest distance.
+            // The first line will be between the closest pair of points,
+            // the second line will be between the second closest pair, etc.
+            //
+            // We use Array.prototype.every() so that we can return false
+            // in order to break out of the loop.
+            links.every(function(link) {
+                // If the distance is larger than twice the largest radius,
+                // then we can stop iterating, because we know that this
+                // and all remaining points are too far apart to overlap.
+                // console.log(link.distance)
+                if (link.distance > maxRadius * 2) {
+                    return false;
+                }
+
+                // If the distance between the points is smaller than the
+                // sum of the two points" radii, they overlap and need to
+                // be merged together.
+                if (link.distance < (link.source.r + link.target.r)*2) {
+                    var cluster = mergePoints(link.source, link.target);
+
+                    // Set the cluster's index to that of the source node
+                    cluster.index = link.source.index;
+
+                    // Set the target node in the clusters array to null
+                    clusters[link.target.index] = null;
+
+                    // Replace the source node with the merged point
+                    clusters[link.source.index] = cluster;
+
+                    // Update our maximum radius
+                    maxRadius = Math.max(maxRadius, cluster.r);
+
+                    // Set flag, so that the outer (while) loop runs again
+                    hasClusters = true;
+
+                    // Break out of the loop, then re-do Delaunay triangulation
+                    // and try to find another pair of points that overlap.
+                    return false;
+                }
+                return true;
+            });
+            // clusters = clusters.filter(function(v) { return !!v; })
+        }
+
+        // Return our cluster array, filtering out the nulls we inserted
+        // while clustering
+        return clusters.filter(function(v) { return !!v; });
+    };
+
+
+
+    var map = L.map('map').setView([44.070714,-124.115619], 6.01);
+    // var map = L.map('map').setView([38.027336, -122.826623], 13.01);
+
+    // 'https://api.mapbox.com/styles/v1/astrofyz/clm1f0crg020t01p91frx3ni2/tiles/256/{z}/{x}/{y}@2x?access_token=pk.eyJ1IjoiYXN0cm9meXoiLCJhIjoiY2xtMWF4MTBxMzByMTNxcGkwc2cycDlhMSJ9.0o3QKpA4eMmFsX2pfk-Idw'
+
+    //https://api.mapbox.com/styles/v1/astrofyz/clmul907w05lq01qielmlansh/tiles/256/{z}/{x}/{y}@2x?access_token=pk.eyJ1IjoiYXN0cm9meXoiLCJhIjoiY2xtMWF4MTBxMzByMTNxcGkwc2cycDlhMSJ9.0o3QKpA4eMmFsX2pfk-Idw
+
+
+    L.tileLayer(
+      'https://api.mapbox.com/styles/v1/astrofyz/clmuntcu505n101qb24x3hc6r/tiles/256/{z}/{x}/{y}@2x?access_token=pk.eyJ1IjoiYXN0cm9meXoiLCJhIjoiY2xtMWF4MTBxMzByMTNxcGkwc2cycDlhMSJ9.0o3QKpA4eMmFsX2pfk-Idw', {
+        attribution: '© OpenStreetMap | Mapbox',
+        maxZoom: 18,
+      }).addTo(map);
+
+    // L.tileLayer(
+    //   'https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    //     attribution: 'OpenStreetMap | @astrofyz',
+    //     maxZoom: 18,
+    //   }).addTo(map);
+
+    var Tooltip = d3.select("#map")
+      .append("div")
+      .attr("class", "tooltip")
+      .style("opacity", 0)
+
+    var TooltipText = d3.select("#map")
+      .append("div")
+      .attr("class", "tooltip")
+      .style("opacity", 0)
+      .style("data-contatiner", "body")
+      .style("font", "Beth Ellen")
+
+    function addHike(hike){
+      omnivore.gpx(`https://raw.githubusercontent.com/astrofyz/westcoast/main/strava/${hike.fname}.gpx`)
+      .on('ready', function(){
+        this.setStyle({
+          'color': '#d53f50',
+          'weight': 4,
+          'opacity': 1.
+        })
+      })
+      .on('mouseover', function(e){
+        this.setStyle({
+          'color': '#3fd5c4',
+          'weight': 7
+        });
+
+        // embed_path = '<iframe srcdoc="<html><body><div class=&quot;strava-embed-placeholder&quot; data-embed-type=&quot;activity&quot; data-embed-id=&quot;'+hike.activityID+'&quot;><script src=&quot;https://strava-embeds.com/embed.js&quot;><\/script> </body></html>" onload="javascript:(function(o){o.style.height=o.contentWindow.document.body.scrollHeight+&quot;px&quot;;}(this))"; style="height:200px;width:100%;border:none;overflow:hidden;"></iframe>'  // "height="500" width="400"
+
+        embed_path = 'Distance: '+hike.distance+' mi<br>Elev gain: '+hike.elevgain+' ft<br>Time: '+hike.h+'h '+hike.m+'m'
+
+        // https://maps.app.goo.gl/4cocwBTu3rEby7Kc9
+
+        TooltipText
+          .html(embed_path)
+          .style("left", (e.containerPoint.x+5) + "px")     
+          .style("top", (e.containerPoint.y+5) + "px")
+          .style("opacity", 1.)
+          .style("position", "fixed")
+          .style("font-size", "15px")
+          .style("font-family", "Beth Ellen, regular")
+          .style("width", "max-content")
+          .style("max-width", "150px")
+          .style("padding", "10px")
+          .style("text-align", "left")
+          .style("border", "2px solid #f9e9cd")
+          .style("background-color", "#f9e9cd")
+        })
+      .on('mouseout', function(){
+        this.setStyle({
+          'color': '#d53f50',
+          'weight': 6,
+          'opacity': 1.
+        })
+
+        TooltipText
+          .transition()        
+          .duration(200)      
+          .style("opacity", 0);
+      })
+      .addTo(map)
+    }
+
+
+    addHike({'fname': 'Day_1', 'distance': '6.51', 'elevgain': '1,137', 'h':2, 'm': 24, 'activityID': 9654069895})
+    addHike({'fname': 'Day_2', 'distance': '8.94', 'elevgain': '1,321', 'h':3, 'm': 23, 'activityID': 9661365815})
+    addHike({'fname': 'Day_3', 'distance': '7.03', 'elevgain': '1,068', 'h':2, 'm': 20, 'activityID': 9661367269})
+    addHike({'fname': 'Foggy_forest_hike', 'distance': '10.13', 'elevgain': '1,932', 'h':3, 'm': 35, 'activityID': 9675057750})
+    addHike({'fname': 'Rainforest_walk', 'distance': '6.93', 'elevgain': '534', 'h':2, 'm': 16, 'activityID': 9707359219})
+    addHike({'fname': 'Walk_along_the_river', 'distance': '8.60', 'elevgain': '1,326', 'h':3, 'm': 15, 'activityID': 9708447961})
+    addHike({'fname': 'Attempt_to_summit_mt_Washington', 'distance': '3.85', 'elevgain': '1,440', 'h':1, 'm': 56, 'activityID': 9719200738})
+
+
+    var color = d3.scaleOrdinal(d3.schemeCategory10);
+    color = d3.scaleLinear()
+            .domain([13, 25])
+            .range(["#ffb14e", "#9d02d7"]);
+
+    for (let i = 13; i<25; i++) {
+      if (i === 15) { continue; }
+      omnivore.gpx(`https://raw.githubusercontent.com/astrofyz/westcoast/main/driving/2023-08-${i}.gpx`, null, L.geoJson(null, {
+                color:" #952c38", //color(i),
+                weight: 3,
+                opacity: 1,
+              },
+      )).addTo(map)   // можно это тоже научиться делать через d3.js, у меня пока не получилось
+    }
+
+
+    // We pick up the SVG from the map object
+    var svgLayer = L.svg({clickable:true});
+    svgLayer.addTo(map);
+
+    var svg = d3.select("#map").select("svg");
+    var g = d3.select("#map").select("svg").select('g');
+    g.attr("class", "leaflet-zoom-hide");
+
+    d3.csv("https://raw.githubusercontent.com/astrofyz/westcoast/main/df_places.csv", function(data) {
+      points = []
+
+      data.forEach(function(d) {
+        var pointObj = new Object()
+        pointObj.lat = parseFloat(d.latitude)
+        pointObj.lng = parseFloat(d.longitude)
+        pointObj.name = d.name 
+        pointObj.type = d.type
+        pointObj.pic = d.pic
+        pointObj.notes = d.notes
+        points.push(pointObj)
+        d.LatLng = new L.LatLng(parseFloat(d.latitude), parseFloat(d.longitude))
+      })
+
+
+      map.on("viewreset", function() {alert("VIEW RESET"); update});  // doesn't fire at zoom events in leaflet > 1.0
+      map.on("zoomend", function(){d3.selectAll("circle").remove(); d3.selectAll("image").remove(); update()})  // g > *
+      map.on("moveend", function(){update()})
+      update();
+
+      function update() {
+        // var clusters =  overlap(points)
+        var clusters = points.map(function (d) {
+          p = map.latLngToLayerPoint([d.lat, d.lng])
+          return {
+            x: p.x,
+            y: p.y,
+            r: unitRadius,
+            points: [d]
+          }
+        })
+
+        var feature = g.selectAll(".clusters")
+          .data(clusters.filter(function(d) {return d.r > unitRadius}))
+          .enter()
+          .append("circle")
+          .attr("cx", function(d) { return d.x; })
+          .attr("cy", function(d) { return d.y; })
+          .attr("r", function(d) { return d.r/3; })
+          .attr("fill", "red")
+
+        var featureId = g.selectAll(".node")
+          .data(clusters.filter(function(d) {return d.r === unitRadius}))
+          .enter()
+          .append("svg:image")
+          .attr('class','poi')
+          .attr('width', 45) //7*map.getZoom())  // неплохо выглядит на уровне 15, хотя можно и чуть-чуть поменьше. может, до этого уровня делать их кружочками?
+          .attr('height', 45) //7*map.getZoom())
+          .attr('x', function(d) { return d.x-22; })
+          .attr('y', function(d) { return d.y-22; })
+          .attr("xlink:href",function(d){
+            if (d.points[0].type === 'camp') {return "https://raw.githubusercontent.com/astrofyz/westcoast/main/icon/camp_nobrd.png"}
+            if (d.points[0].type === 'coffee') {return "https://raw.githubusercontent.com/astrofyz/westcoast/main/icon/coffee_nobrd.png"}
+            if (d.points[0].type === 'icecream') {return "https://raw.githubusercontent.com/astrofyz/westcoast/main/icon/gelato_nobrd.png"}
+            if (d.points[0].type === 'Food') {return "https://raw.githubusercontent.com/astrofyz/westcoast/main/icon/food_nobrd.png"}
+            if (d.points[0].type === 'Hotel') {return "https://raw.githubusercontent.com/astrofyz/westcoast/main/icon/hotel_nobrd.png"}
+            if (d.points[0].type === 'Grocery') {return "https://raw.githubusercontent.com/astrofyz/westcoast/main/icon/safeway.png"}
+            else {return "https://raw.githubusercontent.com/astrofyz/westcoast/main/icon/lighthouse_nobrd.png"}
+          })
+          .on("mouseover", function(d) {
+            if (d.points[0].pic !== "") {
+              var filename = d.points[0].pic
+              var x0 = d3.event.pageX
+              var y0 = d3.event.pageY
+              var W = map.getSize().x 
+              var H = map.getSize().y 
+              var imsize = Math.round(Math.min(W, H) / 2.5)
+              var R = Math.sqrt(2) * imsize / 2
+              var A = 2 * W - (4 * x0)
+              var B = 2 * H - (4 * y0)
+              var u = A * R / Math.sqrt(A * A + B * B)
+              var v = B * R / Math.sqrt(A * A + B * B)
+              var topCorner = y0 + v - imsize / 2
+              var leftCorner = x0 + u - imsize / 2
+              var img_path = "<img src=https://raw.githubusercontent.com/astrofyz/westcoast/main/pic/"+filename+" width="+imsize+" height="+imsize+">"
+
+              Tooltip
+                .transition()        
+                .duration(200)      
+                .style("opacity", .95)
+
+              Tooltip
+                .html(img_path) //this will add the image on mouseover
+                .style("left", leftCorner + "px")     // переподсчитать положения с window.innerWidth window.innerHeight и поставить его туда, куда надо
+                .style("top", topCorner + "px")
+            }
+
+            else if (d.points[0].name !== "") {
+              var W = map.getSize().x
+              var H = map.getSize().y
+              var textsize = Math.round(Math.min(W, H) / 5)
+
+              if (d.points[0].notes !== "") {
+                embed_path = d.points[0].name+'<br>H.K.: '+d.points[0].notes
+              }
+              else {
+                embed_path = d.points[0].name
+              }
+
+              TooltipText
+                .html(embed_path)
+                .style("left", (d3.event.pageX+5) + "px")     
+                .style("top", (d3.event.pageY+5) + "px")
+                .style("opacity", 1.)
+                .style("position", "fixed")
+                .style("font-size", "15px")
+                .style("font-family", "Kalam, light")
+                .style("width", "max-content")
+                .style("max-width", textsize+"px")
+                .style("padding", "10px")
+                .style("text-align", "left")
+                .style("border", "2px solid #f9e9cd")
+                .style("background-color", "#f9e9cd")
+            }
+          })
+          .on("mouseout", function(d) {                           // when the mouse leaves a circle, do the following
+            Tooltip
+              .transition()                                    // declare the transition properties to fade-out the div
+              .duration(500)                                  // it shall take 500ms
+              .style("opacity", 0);                           // and go all the way to an opacity of nil
+            TooltipText
+              .transition()
+              .duration(500)
+              .style("opacity", 0);
+          })
+          .attr("style", "pointer-events: fill;");
+      }
+
+    });
+
+    // handmade legend
+    // svg.append("circle").attr("cx",200).attr("cy",130).attr("r", 6).style("fill", "#69b3a2")
+    // svg.append("circle").attr("cx",200).attr("cy",160).attr("r", 6).style("fill", "#404080")
+    // svg.append("text").attr("x", 220).attr("y", 130).text("variable A").style("font-size", "15px").attr("alignment-baseline","middle")
+    // svg.append("text").attr("x", 220).attr("y", 160).text("variable B").style("font-size", "15px").attr("alignment-baseline","middle")
+
+    // var legend = L.control({position: 'topleft'});
+    //
+    // legend.onAdd = function (map) {
+    //
+    //   var div = L.DomUtil.create('div', 'info legend'),
+    //           grades = ["Cafe", "Ice cream", "Restaurant", "Grocery (only Safeway)", "Campground", "Hotel/Airbnb",
+    //             "Point Of Interest" ],
+    //           labels = ["icon/coffee_nobrd.png","icon/gelato_nobrd.png", "icon/food_nobrd.png", "icon/safeway.png",
+    //             "icon/camp_nobrd.png", "icon/hotel_nobrd.png", "icon/lighthouse_nobrd.png"];
+    //
+    //   // loop through our density intervals and generate a label with a colored square for each interval
+    //   for (var i = 0; i < grades.length; i++) {
+    //     div.innerHTML +=
+    //             grades[i] + (" <img src="+ labels[i] +" height='40' width='40'>") +'<br>';
+    //   }
+    //
+    //   return div}
+    //
+    // legend.addTo(map)
+
+  </script>
+</body>
+
+</html>
