@@ -360,7 +360,7 @@
           .attr("fill", "red")
 
         var featureId = g.selectAll(".node")
-          .data(clusters.filter(function(d) {return d.r === unitRadius}))
+          .data(clusters.filter(function(d) {return (d.r === unitRadius)&(d.points[0].type !== "Grocery")}))
           .enter()
           .append("svg:image")
           .attr('class','poi')
