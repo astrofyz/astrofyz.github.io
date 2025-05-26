@@ -41,7 +41,7 @@ var sankey = d3.sankey()
     .maxDepth(top_number);
 
 // load the data
-d3.json("https://raw.githubusercontent.com/astrofyz/d3project_inherit/main/2021_all_teams.json", function(error, graph) {
+d3.json("https://raw.githubusercontent.com/astrofyz/studchr_flow/refs/heads/archive/2021_all_teams.json", function(error, graph) {
 
   // Constructs a new Sankey generator with the default settings.
   sankey
